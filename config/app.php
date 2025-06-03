@@ -117,6 +117,8 @@ return [
     | Supported drivers: "file", "cache"
     |
     */
+    App\Providers\RouteServiceProvider::class,
+
 
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
