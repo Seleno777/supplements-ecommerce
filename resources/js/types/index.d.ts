@@ -36,4 +36,17 @@ export interface User {
     updated_at: string;
 }
 
+export interface Product {
+    id: number;
+    name: string;
+    description: string;
+    price: number;
+    stock: number;
+    category: string | null;
+    user: {
+        name: string;
+    };
+}
+
+
 export type BreadcrumbItemType = BreadcrumbItem;
