@@ -42,6 +42,7 @@ const user = page.props.auth?.user;
                     <Link href="/orders" class="hover:text-primary">📃 Mis pedidos</Link>
                     <Link href="/notifications" class="hover:text-primary">🔔 Notificaciones</Link>
                     <Link href="/messages" class="hover:text-primary">💬 Chat</Link>
+                    <Link href="/products/create" class="hover:text-primary">➕ Crear producto</Link>
                 </nav>
             </aside>
 
