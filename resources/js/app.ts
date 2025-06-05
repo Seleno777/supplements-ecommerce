@@ -9,6 +9,20 @@ import { createApp, h } from 'vue';
 // Axios: aseguramos que use cookies de sesión y CSRF
 axios.defaults.withCredentials = true;
 
+// Carga el XSRF-TOKEN desde la cookie y lo pasa como header
+axios.interceptors.request.use((config) => {
+    const token = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('XSRF-TOKEN='))
+        ?.split('=')[1];
+
+    if (token) {
+        config.headers['X-XSRF-TOKEN'] = decodeURIComponent(token);
+    }
+
+    return config;
+});
+
 const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 if (token) {
     axios.defaults.headers.common['X-CSRF-TOKEN'] = token;

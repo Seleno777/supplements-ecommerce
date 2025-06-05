@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Link, usePage } from '@inertiajs/vue3';
+import axios from 'axios';
 import { ref, watchEffect } from 'vue';
 
 const isDark = ref(localStorage.theme === 'dark' || window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -28,7 +29,7 @@ const user = page.props.auth?.user;
                 <Button variant="ghost" @click="isDark = !isDark">
                     {{ isDark ? '☀️' : '🌙' }}
                 </Button>
-                <Link v-if="user" href="/logout" method="post" as="button" class="hover:text-primary text-sm underline transition"> Salir </Link>
+                <Link href="/logout" method="post" as="button" class="hover:text-primary text-sm underline transition"> Cerrar sesión </Link>
             </div>
         </header>
 

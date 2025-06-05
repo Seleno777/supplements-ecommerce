@@ -2,15 +2,18 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Link } from '@inertiajs/vue3';
 import axios from 'axios';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 
 const form = ref({ email: '', password: '' });
 const error = ref('');
 
+onMounted(async () => {
+  await axios.get('/sanctum/csrf-cookie') // <- fuerza regeneración del token al cargar login
+})
+
 const submit = async () => {
     error.value = '';
     try {
-        await axios.get('/sanctum/csrf-cookie'); // <- Necesario para auth
         await axios.post('/login', form.value);
         window.location.href = '/';
     } catch (err: any) {
