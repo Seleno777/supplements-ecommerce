@@ -1,6 +1,6 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+/* use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
@@ -34,3 +34,4 @@ Route::patch('/notifications/{notification}/read', [NotificationController::clas
 Route::get('/conversations', [ConversationController::class, 'index']);
 Route::get('/conversations/{userId}', [ConversationController::class, 'show']);
 Route::post('/messages', [MessageController::class, 'store']);
+ */

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class ProductController extends Controller
 {
@@ -46,6 +47,10 @@ class ProductController extends Controller
 
     public function myProducts()
     {
-        return Product::where('user_id', Auth::id())->get();
+        $products = Product::where('user_id', Auth::id())->get();
+
+        return Inertia::render('MyProducts', [
+            'products' => $products
+        ]);
     }
 }
