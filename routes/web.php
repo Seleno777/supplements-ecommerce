@@ -38,8 +38,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/cart/{product_id}', [CartController::class, 'destroy']);
 
     // ÓRDENES
-    Route::get('/orders', [OrderController::class, 'index']);
-    Route::post('/checkout', [OrderController::class, 'checkout']);
+    Route::post('/checkout', [OrderController::class, 'checkout'])->name('checkout');
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
 
     // NOTIFICACIONES
     Route::get('/notifications', [NotificationController::class, 'index']);

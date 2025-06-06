@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { CartItem } from '@/types';
-import { ref } from 'vue';
 import axios from 'axios';
+import { ref } from 'vue';
+import { router } from '@inertiajs/vue3'; // ← ¡faltaba esto!
 
-defineProps<{ cartItems: CartItem[] }>();
+const props = defineProps<{ cartItems: CartItem[] }>();
+const cartItems = props.cartItems;
 
 const loading = ref(false);
 
@@ -19,7 +21,7 @@ const updateQuantity = async (item: CartItem, change: number) => {
             product_id: item.product_id,
             quantity: newQty,
         });
-        item.quantity = newQty; // Actualizamos localmente para evitar recarga
+        item.quantity = newQty;
     } catch {
         alert('Error al actualizar cantidad.');
     } finally {
@@ -33,9 +35,24 @@ const removeItem = async (id: number) => {
     loading.value = true;
     try {
         await axios.delete(`/cart/${id}`);
-        location.reload(); // o puedes emitir un evento para quitarlo sin recargar
+        location.reload();
     } catch {
         alert('Error al eliminar el producto.');
+    } finally {
+        loading.value = false;
+    }
+};
+
+const checkout = async () => {
+    if (!confirm('¿Deseas finalizar tu compra?')) return;
+
+    loading.value = true;
+    try {
+        await axios.post('/checkout');
+        alert('Compra realizada con éxito 🎉');
+        router.visit('/orders');
+    } catch (err: any) {
+        alert(err.response?.data?.message || 'Ocurrió un error durante el checkout.');
     } finally {
         loading.value = false;
     }
@@ -62,6 +79,16 @@ const removeItem = async (id: number) => {
                         <button @click="removeItem(item.product_id)" class="ml-4 text-red-600">🗑 Eliminar</button>
                     </div>
                 </div>
+            </div>
+
+            <div class="flex justify-end mt-6">
+                <button
+                    @click="checkout"
+                    :disabled="loading || cartItems.length === 0"
+                    class="px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50"
+                >
+                    Finalizar compra 🛒
+                </button>
             </div>
         </div>
     </AppLayout>
