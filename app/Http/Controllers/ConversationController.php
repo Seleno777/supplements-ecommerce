@@ -27,11 +27,11 @@ class ConversationController extends Controller
 
         $conversation = Conversation::firstOrCreate(
             [
-                ['user_one_id', min($authId, $userId)],
-                ['user_two_id', max($authId, $userId)],
+                'user_one_id' => min($authId, $userId),
+                'user_two_id' => max($authId, $userId),
             ]
         );
 
-        return $conversation->load('messages.sender');
+        return response()->json($conversation->load('messages.sender'));
     }
 }

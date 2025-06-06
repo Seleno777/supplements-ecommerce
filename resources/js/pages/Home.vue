@@ -4,6 +4,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import type { Product } from '@/types';
 import axios from 'axios';
 import { onMounted, ref } from 'vue';
+import { router } from '@inertiajs/vue3';
 
 const products = ref<Product[]>([]);
 const loading = ref(false);
@@ -27,6 +28,11 @@ const addToCart = async (productId: number) => {
             alert('Ocurrió un error al agregar al carrito.');
         }
     }
+};
+
+const startChat = (userId: number) => {
+    if (!userId) return;
+    router.visit(`/conversations/${userId}`);
 };
 </script>
 
@@ -53,6 +59,8 @@ const addToCart = async (productId: number) => {
                     </div>
 
                     <Button class="w-full mt-4" @click="addToCart(product.id)">Agregar al carrito</Button>
+
+                    <Button class="w-full mt-4" @click="startChat(product.user.id)"> 💬 Chatear con el vendedor </Button>
                 </div>
             </div>
         </div>

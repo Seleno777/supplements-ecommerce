@@ -50,7 +50,7 @@ watchEffect(() => {
                         🔔 Notificaciones
                         <span v-if="unread > 0" class="ml-1 text-sm font-bold text-red-500"> ({{ unread }}) </span>
                     </Link>
-                    <Link href="/messages" class="hover:text-primary">💬 Chat</Link>
+                    <Link href="/conversations" class="hover:text-primary">💬 Chat</Link>
                     <Link href="/products/create" class="hover:text-primary">➕ Crear producto</Link>
                 </nav>
             </aside>

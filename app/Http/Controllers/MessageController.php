@@ -6,6 +6,7 @@ use App\Models\Message;
 use App\Models\Conversation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Events\MessageSent;
 
 class MessageController extends Controller
 {
@@ -28,7 +29,7 @@ class MessageController extends Controller
             'content' => $request->content,
         ]);
 
-        // Aquí podrías emitir un evento para WebSocket (ej: usando Laravel Echo)
+        broadcast(new MessageSent($message))->toOthers(); // <-- importante
 
         return $message->load('sender');
     }

@@ -46,9 +46,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
 
     // CHAT
-    Route::get('/conversations', [ConversationController::class, 'index']);
-    Route::get('/conversations/{userId}', [ConversationController::class, 'show']);
-    Route::post('/messages', [MessageController::class, 'store']);
+    Route::get('/conversations', [ConversationController::class, 'index'])->name('conversations.index');
+    Route::get('/conversations/{userId}', [ConversationController::class, 'show'])->name('conversations.show');
+    Route::post('/messages', [MessageController::class, 'store'])->name('chat.message');
 });
 
 
