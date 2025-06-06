@@ -48,5 +48,18 @@ export interface Product {
     };
 }
 
+export type CartItem = {
+    id: number;
+    product_id: number;
+    quantity: number;
+    user_id: number;
+    product: {
+        id: number;
+        name: string;
+        price: number;
+        stock: number;
+        description: string;
+    };
+};
 
 export type BreadcrumbItemType = BreadcrumbItem;

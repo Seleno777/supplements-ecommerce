@@ -18,7 +18,7 @@ class CartController extends Controller
             ->get();
 
         return Inertia::render('Cart', [
-            'items' => $items
+            'cartItems' => $items
         ]);
     }
 
@@ -29,17 +29,27 @@ class CartController extends Controller
             'quantity' => 'required|integer|min:1',
         ]);
 
-        $cartItem = CartItem::updateOrCreate(
-            [
-                'user_id' => Auth::id(),
-                'product_id' => $request->product_id,
-            ],
-            [
-                'quantity' => $request->quantity,
-            ]
-        );
+        $product = Product::findOrFail($request->product_id);
 
-        return $cartItem;
+        $cartItem = CartItem::firstOrNew([
+            'user_id' => Auth::id(),
+            'product_id' => $request->product_id,
+        ]);
+
+        // Nueva cantidad deseada (puede ser igual o distinta)
+        $newQty = $request->quantity;
+
+        // No dejar que exceda el stock
+        if ($newQty > $product->stock) {
+            return response()->json([
+                'message' => 'No hay suficiente stock disponible.'
+            ], 400);
+        }
+
+        $cartItem->quantity = $newQty;
+        $cartItem->save();
+
+        return $cartItem->load('product');
     }
 
     public function destroy($product_id)

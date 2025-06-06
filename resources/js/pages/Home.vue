@@ -6,11 +6,28 @@ import axios from 'axios';
 import { onMounted, ref } from 'vue';
 
 const products = ref<Product[]>([]);
+const loading = ref(false);
 
 onMounted(async () => {
     const { data } = await axios.get('/products');
     products.value = data;
 });
+
+const addToCart = async (productId: number) => {
+    try {
+        await axios.post('/cart', {
+            product_id: productId,
+            quantity: 1,
+        });
+        alert('Producto agregado al carrito ✅');
+    } catch (err: any) {
+        if (err.response?.status === 409) {
+            alert('Este producto ya está en el carrito.');
+        } else {
+            alert('Ocurrió un error al agregar al carrito.');
+        }
+    }
+};
 </script>
 
 <template>
@@ -35,7 +52,7 @@ onMounted(async () => {
                         <p class="text-xs italic text-muted-foreground">Vendido por: {{ product.user?.name }}</p>
                     </div>
 
-                    <Button class="w-full mt-4">Agregar al carrito</Button>
+                    <Button class="w-full mt-4" @click="addToCart(product.id)">Agregar al carrito</Button>
                 </div>
             </div>
         </div>
