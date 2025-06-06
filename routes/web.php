@@ -11,10 +11,6 @@ use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\MessageController;
 
 Route::middleware('auth')->group(function () {
-    Route::get('/', fn() => Inertia::render('Home'))->name('dashboard'); // alias aquí
-});
-
-Route::middleware('auth')->group(function () {
     // Vistas Inertia existentes
     Route::get('/', fn() => Inertia::render('Home'))->name('dashboard');
     Route::get('/products/create', fn() => Inertia::render('CreateProduct'))->name('products.create');

@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted } from 'vue';
 import echo from '@/echo';
 import axios from 'axios';
+import { computed, nextTick, ref, watch } from 'vue';
+
+let channel: any = null;
 
 const props = defineProps<{
     conversation: {
@@ -19,7 +21,12 @@ const props = defineProps<{
 
 const emit = defineEmits(['close']);
 
-const messages = ref([...props.conversation?.messages ?? []]);
+// Computed: siempre actualizado con props
+const baseMessages = computed(() => props.conversation?.messages ?? []);
+const extraMessages = ref<any[]>([]);
+
+const allMessages = computed(() => [...baseMessages.value, ...extraMessages.value]);
+
 const newMessage = ref('');
 const scrollRef = ref<HTMLElement | null>(null);
 
@@ -32,9 +39,7 @@ const sendMessage = async () => {
             content: newMessage.value.trim(),
         });
 
-        // Esto muestra el mensaje enviado localmente de inmediato
-        messages.value.push(response.data);
-
+        extraMessages.value.push(response.data); // solo nuevos, no duplicamos los props
         scrollToBottom();
         newMessage.value = '';
     } catch (err) {
@@ -48,18 +53,36 @@ const scrollToBottom = () => {
     });
 };
 
-watch(() => props.show, (visible) => {
-    if (visible) scrollToBottom();
-});
+watch(
+    () => props.conversation.id,
+    (id) => {
+        if (!id) return;
 
-onMounted(() => {
-    echo.private(`chat.${props.conversation.id}`).listen('MessageSent', (event: any) => {
-        messages.value.push(event.message);
+        if (channel) {
+            echo.leave(`chat.${id}`);
+            channel = null;
+        }
+
+        channel = echo.private(`chat.${id}`);
+        channel.listen('MessageSent', (event: any) => {
+            extraMessages.value.push(event.message);
+            scrollToBottom();
+        });
+
         scrollToBottom();
-    });
+    },
+    { immediate: true },
+);
 
-    scrollToBottom();
-});
+watch(
+    () => props.show,
+    (visible) => {
+        if (!visible && props.conversation?.id && channel) {
+            echo.leave(`chat.${props.conversation.id}`);
+            channel = null;
+        }
+    },
+);
 </script>
 
 <template>
@@ -72,7 +95,7 @@ onMounted(() => {
 
             <div class="p-2 mb-4 space-y-2 overflow-y-auto bg-gray-100 rounded h-80 dark:bg-gray-700">
                 <div
-                    v-for="msg in messages"
+                    v-for="msg in allMessages"
                     :key="msg.id"
                     :class="{
                         'text-right': msg.sender.id === userId,
