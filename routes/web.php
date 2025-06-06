@@ -20,9 +20,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/products/create', fn() => Inertia::render('CreateProduct'))->name('products.create');
 
     // PRODUCTOS
+    // Mostrar todos los productos
     Route::post('/products', [ProductController::class, 'store']);
-    Route::put('/products/{product}', [ProductController::class, 'update']);
+    // Editar productos
+    Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');;
+    Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
+
+    // Borrar producto
     Route::delete('/products/{product}', [ProductController::class, 'destroy']);
+    // Mostrar productos de cada usuario
     Route::get('/my-products', [ProductController::class, 'myProducts'])->name('products.mine');
     Route::get('/products', [ProductController::class, 'index']);
 

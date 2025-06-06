@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Product } from '@/types';
-import { router } from '@inertiajs/vue3';
+import { router, Link } from '@inertiajs/vue3';
 import axios from 'axios';
 import { ref } from 'vue';
 
@@ -17,7 +17,7 @@ const deleteProduct = async (id: number) => {
     loading.value = true;
     try {
         await axios.delete(`/products/${id}`);
-        router.reload({ only: ['products'] });
+        router.visit('/my-products');
     } catch (err) {
         alert('Error al eliminar el producto.');
     } finally {
@@ -46,7 +46,9 @@ const deleteProduct = async (id: number) => {
                     </div>
 
                     <div class="flex gap-2 mt-3">
-                        <button class="px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700">Editar</button>
+                        <Link :href="`/products/${product.id}/edit`" class="px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700">
+                            Editar
+                        </Link>
                         <button
                             @click="deleteProduct(product.id)"
                             :disabled="loading"

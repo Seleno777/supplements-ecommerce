@@ -32,17 +32,31 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product)
     {
-        $this->authorize('update', $product);
+        //$this->authorize('update', $product);
 
         $product->update($request->only(['name', 'description', 'price', 'stock', 'category']));
         return $product;
     }
 
+    public function edit(Product $product)
+    {
+        if ($product->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        return Inertia::render('EditProduct', [
+            'product' => $product
+        ]);
+    }
+
     public function destroy(Product $product)
     {
-        $this->authorize('delete', $product);
+        if ($product->user_id !== Auth::id()) {
+            abort(403);
+        }
+
         $product->delete();
-        return response()->noContent();
+        return response()->noContent(); // status 204
     }
 
     public function myProducts()
