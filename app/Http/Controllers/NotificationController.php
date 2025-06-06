@@ -5,14 +5,19 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class NotificationController extends Controller
 {
     public function index()
     {
-        return Notification::where('user_id', Auth::id())
+        $notifications = Notification::where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->get();
+
+        return Inertia::render('Notifications', [
+            'notifications' => $notifications
+        ]);
     }
 
     public function markAsRead(Notification $notification)

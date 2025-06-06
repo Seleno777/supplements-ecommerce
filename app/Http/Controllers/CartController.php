@@ -6,15 +6,20 @@ use App\Models\CartItem;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 
 class CartController extends Controller
 {
     public function index()
     {
-        return CartItem::with('product')
+        $items = CartItem::with('product')
             ->where('user_id', Auth::id())
             ->get();
+
+        return Inertia::render('Cart', [
+            'items' => $items
+        ]);
     }
 
     public function store(Request $request)

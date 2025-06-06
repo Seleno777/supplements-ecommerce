@@ -5,15 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\Conversation;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class ConversationController extends Controller
 {
     public function index()
     {
-        return Conversation::with(['userOne', 'userTwo'])
+        $conversations = Conversation::with(['userOne', 'userTwo'])
             ->where('user_one_id', Auth::id())
             ->orWhere('user_two_id', Auth::id())
             ->get();
+
+        return Inertia::render('Messages', [
+            'conversations' => $conversations
+        ]);
     }
 
     public function show($userId)

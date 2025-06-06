@@ -9,15 +9,20 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class OrderController extends Controller
 {
     public function index()
     {
-        return Order::with('items.product')
+        $orders = Order::with('items.product')
             ->where('user_id', Auth::id())
             ->latest()
             ->get();
+
+        return Inertia::render('Orders', [
+            'orders' => $orders
+        ]);
     }
 
     public function checkout()
