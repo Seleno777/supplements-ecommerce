@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -67,12 +68,10 @@ class OrderController extends Controller
                 $item->product->decrement('stock', $item->quantity);
 
                 // Notificar si el producto se agotó
-                if ($item->product->stock <= 0) {
-                    $item->product->user->notifications()->create([
-                        'message' => "Tu producto '{$item->product->name}' está agotado.",
-                        'type' => 'warning',
-                    ]);
-                }
+                $item->product->user->notifications()->create([
+                    'message' => "Tu producto '{$item->product->name}' está agotado.",
+                    'type' => 'warning',
+                ]);
             }
 
             // Vaciar carrito

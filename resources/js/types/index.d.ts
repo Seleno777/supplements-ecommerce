@@ -62,4 +62,12 @@ export type CartItem = {
     };
 };
 
+export interface Notification {
+    id: number;
+    message: string;
+    type: string;
+    read_at: string | null;
+    created_at: string;
+}
+
 export type BreadcrumbItemType = BreadcrumbItem;

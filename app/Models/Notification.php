@@ -15,6 +15,7 @@ class Notification extends Model
         'type',
         'read_at',
     ];
+    
 
     protected $dates = ['read_at'];
 
