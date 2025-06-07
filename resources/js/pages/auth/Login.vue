@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Link } from '@inertiajs/vue3';
-import axios from 'axios';
+import axios from '@/lib/axios';
 import { ref } from 'vue';
 
 const form = ref({ email: '', password: '' });
@@ -9,10 +9,16 @@ const error = ref('');
 
 const submit = async () => {
     error.value = '';
+
     try {
-        await axios.get('/sanctum/csrf-cookie'); // 🔑 genera nuevo token cada vez
-        await axios.post('/login', form.value);
-        window.location.href = '/dashboard';
+        // 🔁 Refresca el token antes del login
+        await axios.get('/sanctum/csrf-cookie', {withCredentials:true});
+
+        // Envia el login
+        await axios.post('/login', form.value, {withCredentials:true});
+
+        // Redirige
+        window.location.href = '/';
     } catch (err: any) {
         error.value = err.response?.data?.message || 'Credenciales inválidas';
     }
