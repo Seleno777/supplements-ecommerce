@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ChatModal from '@/Components/ChatModal.vue';
+import ChatModal from '@/components/ChatModal.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { usePage } from '@inertiajs/vue3';
 import axios from 'axios';
@@ -7,7 +7,8 @@ import { ref } from 'vue';
 
 defineProps<{ conversations: any[] }>();
 
-const userId = usePage().props.auth.user.id;
+const page = usePage<{ auth: { user: { id: number } } }>();
+const userId = page.props.auth.user.id;
 
 const showModal = ref(false);
 const selectedConversation = ref<any>(null);

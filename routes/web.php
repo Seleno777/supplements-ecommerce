@@ -11,7 +11,6 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\MessageController;
 
-
 Route::middleware('auth')->group(function () {
     Route::get('/', fn() => Inertia::render('Home'))->name('dashboard');
 

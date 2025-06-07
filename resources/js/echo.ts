@@ -1,18 +1,20 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
-Pusher.logToConsole = true; // Solo para depurar
+declare global {
+    interface Window {
+        Pusher: any;
+    }
+}
+
+window.Pusher = Pusher;
 
 const echo = new Echo({
     broadcaster: 'pusher',
-    key: '178b2ea8593d0c3b1175',
-    cluster: 'mt1',
-    wsHost: window.location.hostname,
-    wsPort: 6001, // o el que uses
-    wssPort: 6001,
-    forceTLS: false,
-    disableStats: true,
-    enabledTransports: ['ws', 'wss'],
+    key: import.meta.env.VITE_PUSHER_APP_KEY,
+    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
+    forceTLS: true,
+    encrypted: true,
     authEndpoint: '/broadcasting/auth',
     auth: {
         headers: {
