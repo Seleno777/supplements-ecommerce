@@ -2,36 +2,11 @@ import '../css/app.css';
 import './lib/axios';
 
 import { createInertiaApp } from '@inertiajs/vue3';
-import axios from 'axios';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 
-// Axios: aseguramos que use cookies de sesión y CSRF
-axios.defaults.withCredentials = true;
-axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-
-// Carga el XSRF-TOKEN desde la cookie y lo pasa como header
-axios.interceptors.request.use((config) => {
-    const token = document.cookie
-        .split('; ')
-        .find((row) => row.startsWith('XSRF-TOKEN='))
-        ?.split('=')[1];
-
-    if (token) {
-        config.headers['X-XSRF-TOKEN'] = decodeURIComponent(token);
-    }
-
-    return config;
-});
-
-const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-if (token) {
-    axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
-} else {
-    console.error('CSRF token not found');
-}
-
+// NO configurar axios aquí - ya se hace en ./lib/axios
 createInertiaApp({
     title: (title) => `${title} | GymSupps`,
     resolve: (name) => resolvePageComponent(`./pages/${name}.vue`, import.meta.glob<DefineComponent>('./pages/**/*.vue')),
