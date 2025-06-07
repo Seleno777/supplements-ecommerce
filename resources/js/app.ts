@@ -1,4 +1,5 @@
 import '../css/app.css';
+import './lib/axios';
 
 import { createInertiaApp } from '@inertiajs/vue3';
 import axios from 'axios';
@@ -8,6 +9,7 @@ import { createApp, h } from 'vue';
 
 // Axios: aseguramos que use cookies de sesión y CSRF
 axios.defaults.withCredentials = true;
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 // Carga el XSRF-TOKEN desde la cookie y lo pasa como header
 axios.interceptors.request.use((config) => {
