@@ -2,8 +2,9 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { router } from '@inertiajs/vue3';
 import axios from 'axios';
-import { ref } from 'vue';
 import { PackagePlus } from 'lucide-vue-next'; // ícono temático
+import { ref } from 'vue';
+import Notification from '@/components/ui/notification/Notification.vue';
 
 const form = ref({
     name: '',
@@ -21,11 +22,11 @@ const notification = ref<{ message: string; type: 'success' | 'error' | null }>(
 const showNotification = ref(false);
 
 function notify(message: string, type: 'success' | 'error' = 'success') {
-  notification.value = { message, type };
-  showNotification.value = true;
-  setTimeout(() => {
-    showNotification.value = false;
-  }, 3000);
+    notification.value = { message, type };
+    showNotification.value = true;
+    setTimeout(() => {
+        showNotification.value = false;
+    }, 3000);
 }
 
 const submit = async () => {
@@ -50,7 +51,7 @@ const submit = async () => {
 <template>
     <AppLayout>
         <div class="max-w-xl p-6 mx-auto mt-10 bg-white rounded shadow dark:bg-gray-800">
-            <h1 class="mb-6 text-2xl font-bold flex items-center gap-2 text-primary">
+            <h1 class="flex items-center gap-2 mb-6 text-2xl font-bold text-primary">
                 <PackagePlus class="w-6 h-6" />
                 Crear nuevo producto
             </h1>
@@ -83,25 +84,13 @@ const submit = async () => {
 
                 <div v-if="error" class="font-semibold text-red-600">{{ error }}</div>
 
-                <button
-                    type="submit"
-                    :disabled="loading"
-                    class="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
-                >
+                <button type="submit" :disabled="loading" class="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50">
                     {{ loading ? 'Guardando...' : 'Guardar producto' }}
                 </button>
             </form>
         </div>
 
         <!-- Notificación -->
-        <div
-          v-if="showNotification"
-          :class="[
-            'fixed top-6 right-6 px-5 py-3 rounded shadow-lg text-white font-semibold select-none z-50',
-            notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-          ]"
-        >
-          {{ notification.message }}
-        </div>
+        <Notification :message="notification.message" :type="notification.type" :show="showNotification" />
     </AppLayout>
 </template>

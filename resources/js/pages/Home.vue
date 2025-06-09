@@ -2,10 +2,11 @@
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Product } from '@/types';
-import axios from 'axios';
-import { onMounted, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
+import axios from 'axios';
 import { Pill } from 'lucide-vue-next'; // Ícono que representa suplementos
+import { onMounted, ref } from 'vue';
+import Notification from '@/components/ui/notification/Notification.vue';
 
 const products = ref<Product[]>([]);
 const loading = ref(false);
@@ -20,11 +21,11 @@ const notification = ref<{ message: string; type: 'success' | 'error' | null }>(
 const showNotification = ref(false);
 
 function notify(message: string, type: 'success' | 'error' = 'success') {
-  notification.value = { message, type };
-  showNotification.value = true;
-  setTimeout(() => {
-    showNotification.value = false;
-  }, 3000);
+    notification.value = { message, type };
+    showNotification.value = true;
+    setTimeout(() => {
+        showNotification.value = false;
+    }, 3000);
 }
 
 const addToCart = async (productId: number) => {
@@ -36,9 +37,9 @@ const addToCart = async (productId: number) => {
         notify('Producto agregado al carrito ✅', 'success');
     } catch (err: any) {
         if (err.response?.status === 409) {
-            notify('Este producto ya está en el carrito.', 'error');
+            notify(err.response?.data?.message || 'Ocurrió un error al agregar al carrito.', 'error');
         } else {
-            notify('Ocurrió un error al agregar al carrito.', 'error');
+            notify(err.response?.data?.message || 'Ocurrió un error al agregar al carrito.', 'error');
         }
     }
 };
@@ -51,15 +52,13 @@ const startChat = (userId: number) => {
 
 <template>
     <AppLayout>
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-            <h1 class="mb-10 flex items-center gap-4 text-5xl sm:text-6xl font-black uppercase tracking-wide text-primary">
-                <Pill class="w-10 h-10 sm:w-12 sm:h-12 text-primary" />
+        <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <h1 class="flex items-center gap-4 mb-10 text-5xl font-black tracking-wide uppercase text-primary sm:text-6xl">
+                <Pill class="w-10 h-10 text-primary sm:h-12 sm:w-12" />
                 Suplementos disponibles
             </h1>
 
-            <div
-                class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-center items-stretch"
-            >
+            <div class="grid items-stretch justify-center gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <div
                     v-for="product in products"
                     :key="product.id"
@@ -83,14 +82,6 @@ const startChat = (userId: number) => {
         </div>
 
         <!-- Notificación -->
-        <div
-          v-if="showNotification"
-          :class="[
-            'fixed top-6 right-6 px-5 py-3 rounded shadow-lg text-white font-semibold select-none',
-            notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-          ]"
-        >
-          {{ notification.message }}
-        </div>
+        <Notification :message="notification.message" :type="notification.type" :show="showNotification" />
     </AppLayout>
 </template>

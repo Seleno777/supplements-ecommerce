@@ -65,7 +65,7 @@ Route::middleware('auth')->group(function () {
 
         // **ALTERNATIVA: POLLING PARA MENSAJES NUEVOS**
         Route::get('/conversations/{userId}/poll', [MessageController::class, 'pollNewMessages'])->name('messages.poll');
-        
+
         // Marcar mensajes como leídos
         Route::patch('/conversations/{userId}/read', [MessageController::class, 'markAsRead'])->name('messages.markAsRead');
     });

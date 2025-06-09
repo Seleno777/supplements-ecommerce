@@ -4,6 +4,7 @@ import type { Product } from '@/types';
 import { router, Link } from '@inertiajs/vue3';
 import axios from 'axios';
 import { ref } from 'vue';
+import Notification from '@/components/ui/notification/Notification.vue';
 
 defineProps<{ products: Product[] }>();
 
@@ -98,7 +99,7 @@ const proceedDelete = async () => {
             v-if="confirmDialog"
             class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
         >
-            <div class="p-6 bg-white rounded-lg shadow-lg dark:bg-gray-800 max-w-sm w-full text-center">
+            <div class="w-full max-w-sm p-6 text-center bg-white rounded-lg shadow-lg dark:bg-gray-800">
                 <p class="mb-4 text-lg font-semibold text-gray-800 dark:text-white">
                     ¿Estás seguro de eliminar este producto?
                 </p>
@@ -120,15 +121,6 @@ const proceedDelete = async () => {
         </div>
 
         <!-- Notificación -->
-        <div
-            v-if="showNotification"
-            :class="[
-                'fixed top-6 right-6 px-5 py-3 rounded shadow-lg text-white font-semibold select-none z-50',
-                notification.type === 'success' ? 'bg-green-500' :
-                notification.type === 'error' ? 'bg-red-500' : 'bg-yellow-500'
-            ]"
-        >
-            {{ notification.message }}
-        </div>
+        <Notification :message="notification.message" :type="notification.type" :show="showNotification" />
     </AppLayout>
 </template>

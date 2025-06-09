@@ -31,23 +31,27 @@ class CartController extends Controller
 
         $product = Product::findOrFail($request->product_id);
 
-        $cartItem = CartItem::firstOrNew([
-            'user_id' => Auth::id(),
-            'product_id' => $request->product_id,
-        ]);
+        $existingItem = CartItem::where('user_id', Auth::id())
+            ->where('product_id', $request->product_id)
+            ->first();
 
-        // Nueva cantidad deseada (puede ser igual o distinta)
-        $newQty = $request->quantity;
+        if ($existingItem) {
+            return response()->json([
+                'message' => 'Este producto ya está en el carrito. Edita su cantidad en el apartado carrito'
+            ], 409);
+        }
 
-        // No dejar que exceda el stock
-        if ($newQty > $product->stock) {
+        if ($request->quantity > $product->stock) {
             return response()->json([
                 'message' => 'No hay suficiente stock disponible.'
             ], 400);
         }
 
-        $cartItem->quantity = $newQty;
-        $cartItem->save();
+        $cartItem = CartItem::create([
+            'user_id' => Auth::id(),
+            'product_id' => $request->product_id,
+            'quantity' => $request->quantity,
+        ]);
 
         return $cartItem->load('product');
     }
