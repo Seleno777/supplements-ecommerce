@@ -162,4 +162,4 @@ const checkout = () => {
             {{ notification.message }}
         </div>
     </AppLayout>
-</template>
+</template>w
