@@ -14,6 +14,19 @@ class ProductController extends Controller
         return Product::with('user')->where('stock', '>', 0)->get();
     }
 
+    
+
+    public function create()
+    {
+        return Inertia::render('CreateProduct');
+    }
+    public function show(Product $product)
+    {
+        return Inertia::render('ProductDetail', [
+            'product' => $product->load('user')
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([

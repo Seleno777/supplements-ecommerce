@@ -10,17 +10,22 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class MessageSent implements ShouldBroadcast
+class ConversationUpdated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $message;
     public $conversationId;
+    public $message;
+    public $userId;
 
-    public function __construct($message, $conversationId)
+    /**
+     * Create a new event instance.
+     */
+    public function __construct($conversationId, $message, $userId)
     {
-        $this->message = $message;
         $this->conversationId = $conversationId;
+        $this->message = $message;
+        $this->userId = $userId;
     }
 
     /**
@@ -29,7 +34,7 @@ class MessageSent implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("conversation.{$this->conversationId}"),
+            new PrivateChannel("user.{$this->userId}"),
         ];
     }
 
@@ -38,7 +43,7 @@ class MessageSent implements ShouldBroadcast
      */
     public function broadcastAs(): string
     {
-        return 'message.sent';
+        return 'conversation.updated';
     }
 
     /**
@@ -47,11 +52,8 @@ class MessageSent implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'id' => $this->message['id'],
-            'content' => $this->message['content'],
-            'sender' => $this->message['sender'],
-            'created_at' => $this->message['created_at'],
             'conversation_id' => $this->conversationId,
+            'message' => $this->message,
         ];
     }
 }

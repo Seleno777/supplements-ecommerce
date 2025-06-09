@@ -119,10 +119,12 @@ return [
     */
     App\Providers\RouteServiceProvider::class,
     App\Providers\BroadcastServiceProvider::class,
+    
 
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+    
 
 ];
