@@ -2,21 +2,21 @@
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Product } from '@/types';
-import { router } from '@inertiajs/vue3';
+import { usePage, router } from '@inertiajs/vue3';
 import axios from 'axios';
-import { Pill } from 'lucide-vue-next'; // Ícono que representa suplementos
+import { Pill } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
 import Notification from '@/components/ui/notification/Notification.vue';
 
+// Datos reactivos
 const products = ref<Product[]>([]);
 const loading = ref(false);
 
-onMounted(async () => {
-    const { data } = await axios.get('/products');
-    products.value = data;
-});
+// Obtener usuario autenticado desde props
+const page = usePage();
+const currentUserId = ref<number | null>(page.props.auth?.user?.id || null);
 
-// Notificaciones simples
+// Notificaciones
 const notification = ref<{ message: string; type: 'success' | 'error' | null }>({ message: '', type: null });
 const showNotification = ref(false);
 
@@ -28,6 +28,13 @@ function notify(message: string, type: 'success' | 'error' = 'success') {
     }, 3000);
 }
 
+// Cargar productos, excluyendo los del usuario actual
+onMounted(async () => {
+    const { data } = await axios.get('/products');
+    products.value = data.filter((product: Product) => product.user?.id !== currentUserId.value);
+});
+
+// Agregar al carrito
 const addToCart = async (productId: number) => {
     try {
         await axios.post('/cart', {
@@ -36,14 +43,11 @@ const addToCart = async (productId: number) => {
         });
         notify('Producto agregado al carrito ✅', 'success');
     } catch (err: any) {
-        if (err.response?.status === 409) {
-            notify(err.response?.data?.message || 'Ocurrió un error al agregar al carrito.', 'error');
-        } else {
-            notify(err.response?.data?.message || 'Ocurrió un error al agregar al carrito.', 'error');
-        }
+        notify(err.response?.data?.message || 'Ocurrió un error al agregar al carrito.', 'error');
     }
 };
 
+// Iniciar conversación con el vendedor
 const startChat = (userId: number) => {
     if (!userId) return;
     router.visit(`/conversations/${userId}`);
