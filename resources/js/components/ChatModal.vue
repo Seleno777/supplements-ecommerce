@@ -30,8 +30,15 @@ const props = defineProps({
   errors: {
     type: Object,
     default: () => ({})
+  },
+  show: {
+    type: Boolean,
+    default: false
   }
 });
+
+// Definir emit para cerrar el modal
+const emit = defineEmits(['close']);
 
 // Estado del componente
 const messages = ref([]); // inicial vacío, luego cargamos ordenado
@@ -49,6 +56,9 @@ const isPolling = ref(false);
 const lastMessageId = ref(0);
 const pollingError = ref(null);
 const connectionStatus = ref('connecting'); // connecting, connected, error, disconnected
+
+// Variable para el canal de Echo
+let echoChannel = null;
 
 // Inicializar mensajes ordenados y último ID
 const initializeMessages = () => {
@@ -240,8 +250,24 @@ const handleTypingNotification = (data) => {
   }, 2000);
 };
 
-// Limpiar listeners al desmontar
-let echoChannel = null;
+// Función para cerrar el modal
+const closeModal = () => {
+  emit('close');
+};
+
+// Función para manejar clicks en el backdrop
+const handleBackdropClick = (event) => {
+  if (event.target === event.currentTarget) {
+    closeModal();
+  }
+};
+
+// Función para manejar la tecla Escape
+const handleEscapeKey = (event) => {
+  if (event.key === 'Escape') {
+    closeModal();
+  }
+};
 
 onMounted(() => {
   console.log('🚀 Componente Chat montado');
@@ -262,6 +288,7 @@ onMounted(() => {
 
   document.addEventListener('visibilitychange', handleVisibilityChange);
   window.addEventListener('focus', handleWindowFocus);
+  document.addEventListener('keydown', handleEscapeKey);
 
   if (messages.value.length > 0) {
     markMessagesAsRead();
@@ -273,9 +300,14 @@ onBeforeUnmount(() => {
 
   stopPolling();
 
-  if (echoChannel) {
-    echoChannel.leave();
-    notifyOnlineStatus(false);
+  // Corregir la limpieza del canal de Echo
+  if (echoChannel && typeof echoChannel.leave === 'function') {
+    try {
+      echoChannel.leave();
+      notifyOnlineStatus(false);
+    } catch (error) {
+      console.warn('Error al abandonar el canal de Echo:', error);
+    }
   }
 
   if (typingTimeout.value) {
@@ -284,6 +316,7 @@ onBeforeUnmount(() => {
 
   document.removeEventListener('visibilitychange', handleVisibilityChange);
   window.removeEventListener('focus', handleWindowFocus);
+  document.removeEventListener('keydown', handleEscapeKey);
 });
 
 // Notificar estado en línea
@@ -305,11 +338,6 @@ const scrollToBottom = () => {
       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
     }
   });
-};
-
-// Navegar atrás
-const goBack = () => {
-  router.visit('/conversations');
 };
 
 // Formatear hora del mensaje
@@ -354,60 +382,143 @@ const sendMessage = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full w-full">
-    <header class="flex items-center p-4 border-b border-gray-200 dark:border-gray-700">
-      <button
-        class="mr-4 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-        @click="goBack"
-        aria-label="Regresar"
+  <!-- Modal backdrop -->
+  <div
+    v-if="show"
+    class="fixed inset-0 z-50 overflow-y-auto"
+    @click="handleBackdropClick"
+  >
+    <!-- Backdrop oscuro -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    
+    <!-- Contenedor del modal -->
+    <div class="flex min-h-screen items-center justify-center p-4">
+      <!-- Modal content -->
+      <div 
+        class="relative w-full max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-xl transform transition-all"
+        @click.stop
       >
-        ←
-      </button>
-      <h1 class="text-xl font-semibold">
-        Chat con {{ props.otherUser.name }}
-      </h1>
-    </header>
+        <!-- Contenedor del chat -->
+        <div class="flex flex-col h-[80vh] max-h-[600px]">
+          
+          <!-- Header del chat -->
+          <header class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-t-lg">
+            <div class="flex items-center space-x-3">
+              <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                {{ props.otherUser.name.charAt(0).toUpperCase() }}
+              </div>
+              <div>
+                <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+                  {{ props.otherUser.name }}
+                </h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  <span v-if="onlineStatus" class="text-green-500">● En línea</span>
+                  <span v-else class="text-gray-400">● Desconectado</span>
+                </p>
+              </div>
+            </div>
+            
+            <!-- Botón de cerrar -->
+            <button
+              @click="closeModal"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              aria-label="Cerrar chat"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </header>
 
-    <main ref="messagesContainer" class="flex-grow overflow-auto p-4 space-y-2 bg-white dark:bg-gray-900 flex flex-col">
-      <div
-        v-for="message in messages"
-        :key="message.id"
-        class="flex"
-        :class="message.sender.id === currentUser.id ? 'justify-end' : 'justify-start'"
-      >
-        <div
-          :class="{
-            'bg-blue-500 text-white rounded-lg p-2 max-w-xs': message.sender.id === currentUser.id,
-            'bg-gray-300 dark:bg-gray-700 rounded-lg p-2 max-w-xs': message.sender.id !== currentUser.id
-          }"
-          class="inline-block"
-        >
-          <p class="whitespace-pre-wrap">{{ message.content }}</p>
-          <span class="text-xs opacity-70 float-right">{{ formatTime(message.created_at) }}</span>
+          <!-- Área de mensajes con altura fija para permitir scroll -->
+          <main 
+            ref="messagesContainer" 
+            class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-900"
+          >
+            <!-- Mensaje cuando no hay conversación -->
+            <div v-if="messages.length === 0" class="text-center text-gray-500 dark:text-gray-400 py-8">
+              <div class="mb-4">
+                <svg class="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+              <p class="text-lg">No hay mensajes aún</p>
+              <p class="text-sm">¡Inicia la conversación!</p>
+            </div>
+
+            <!-- Lista de mensajes -->
+            <div
+              v-for="message in messages"
+              :key="message.id"
+              class="flex"
+              :class="message.sender.id === currentUser.id ? 'justify-end' : 'justify-start'"
+            >
+              <div
+                :class="{
+                  'bg-blue-500 text-white': message.sender.id === currentUser.id,
+                  'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600': message.sender.id !== currentUser.id
+                }"
+                class="max-w-xs lg:max-w-md px-4 py-2 rounded-2xl shadow-sm"
+              >
+                <p class="text-sm whitespace-pre-wrap">{{ message.content }}</p>
+                <div class="flex justify-end mt-1">
+                  <span 
+                    :class="message.sender.id === currentUser.id ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'"
+                    class="text-xs"
+                  >
+                    {{ formatTime(message.created_at) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Indicador de escritura -->
+            <div v-if="typing" class="flex justify-start">
+              <div class="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-2xl max-w-xs">
+                <div class="flex items-center space-x-1">
+                  <div class="flex space-x-1">
+                    <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                    <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                    <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                  </div>
+                  <span class="text-xs text-gray-500 ml-2">{{ props.otherUser.name }} está escribiendo...</span>
+                </div>
+              </div>
+            </div>
+          </main>
+
+          <!-- Pie del chat con input -->
+          <footer class="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-b-lg">
+            <div class="flex items-end space-x-3">
+              <div class="flex-1">
+                <textarea
+                  v-model="newMessage"
+                  @keypress="handleKeyPress"
+                  rows="1"
+                  placeholder="Escribe un mensaje..."
+                  class="w-full resize-none rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent max-h-32"
+                  style="min-height: 40px;"
+                ></textarea>
+              </div>
+              <Button
+                :disabled="loading || !newMessage.trim()"
+                @click="sendMessage"
+                class="px-6 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+              >
+                <span v-if="loading">
+                  <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Enviando...
+                </span>
+                <span v-else>Enviar</span>
+              </Button>
+            </div>
+          </footer>
         </div>
       </div>
-
-      <p v-if="typing" class="italic text-sm text-gray-500 dark:text-gray-400 text-center">
-        {{ props.otherUser.name }} está escribiendo...
-      </p>
-    </main>
-
-    <footer class="p-4 border-t border-gray-200 dark:border-gray-700 flex space-x-2">
-      <textarea
-        v-model="newMessage"
-        @keypress="handleKeyPress"
-        rows="1"
-        placeholder="Escribe un mensaje..."
-        class="flex-grow resize-none rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      ></textarea>
-      <Button
-        :loading="loading"
-        :disabled="loading || !newMessage.trim()"
-        @click="sendMessage"
-      >
-        Enviar
-      </Button>
-    </footer>
+    </div>
   </div>
 </template>
 
@@ -415,5 +526,37 @@ const sendMessage = async () => {
 /* Scroll smooth para contenedor de mensajes */
 main {
   scroll-behavior: smooth;
+}
+
+/* Personalizar scrollbar */
+main::-webkit-scrollbar {
+  width: 6px;
+}
+
+main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+main::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+main::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Animación para los puntos de escritura */
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 1.4s infinite ease-in-out both;
 }
 </style>

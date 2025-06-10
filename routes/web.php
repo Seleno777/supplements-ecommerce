@@ -20,7 +20,6 @@ Route::get('/csrf-token', function () {
 
 // Rutas públicas de productos
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
 // Rutas protegidas por autenticación
 Route::middleware('auth')->group(function () {
@@ -44,8 +43,7 @@ Route::middleware('auth')->group(function () {
     // Órdenes/Pedidos
     Route::post('/checkout', [OrderController::class, 'checkout'])->name('checkout');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-
-    // Cambio de contraseña
+     // Cambio de contraseña
     Route::get('/password', [PasswordController::class, 'edit'])->name('password.edit');
     Route::put('/password', [PasswordController::class, 'update'])->name('password.update');
 
@@ -76,9 +74,16 @@ Route::middleware('auth')->group(function () {
         Route::patch('/conversations/{userId}/read', [MessageController::class, 'markAsRead'])->name('messages.markAsRead');
     });
 });
+Route::middleware('auth')->group(function () {
+    Route::get('/password', [PasswordController::class, 'edit'])->name('password.edit');
+    Route::put('/password', [PasswordController::class, 'update'])->name('password.update');
+});
+
+// Ruta pública para mostrar producto individual
+Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
 // Rutas de autenticación (login, logout, register, etc.)
 require __DIR__ . '/auth.php';
 
-// Otras configuraciones (verificar que este archivo exista)
+// Otras configuraciones
 require __DIR__ . '/settings.php';

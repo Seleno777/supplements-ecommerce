@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Message, User, Conversation } from '@/types';
 import axios from 'axios';
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, nextTick, onBeforeUnmount } from 'vue';
 import { router } from '@inertiajs/vue3';
 
 interface Props {
@@ -20,6 +20,9 @@ const newMessage = ref('');
 const loading = ref(false);
 const messagesContainer = ref<HTMLElement>();
 
+// Variable para el canal de Echo - CORREGIDA
+let echoChannel = null;
+
 const scrollToBottom = () => {
     nextTick(() => {
         if (messagesContainer.value) {
@@ -32,13 +35,44 @@ onMounted(() => {
     scrollToBottom();
     
     // Set up real-time messaging if using broadcasting
-    if (window.Echo) {
-        window.Echo.private(`conversation.${props.conversation.id}`)
-            .listen('message.sent', (e: any) => {
-                messages.value.push(e.message);
-                scrollToBottom();
-            });
+    if (window.Echo && props.conversation?.id) {
+        console.log(`✅ [Chat] Configurando WebSocket para conversación ${props.conversation.id}`);
+        
+        echoChannel = window.Echo.private(`conversation.${props.conversation.id}`);
+        
+        echoChannel.listen('.message.sent', (e: any) => {
+            console.log('📨 [Chat] Nuevo mensaje recibido:', e);
+            messages.value.push(e.message);
+            scrollToBottom();
+        });
+        
+        // Marcar conversación actual para AppLayout
+        window.currentConversationId = props.conversation.id;
     }
+});
+
+// CLEANUP CORREGIDO
+onBeforeUnmount(() => {
+    console.log('🧹 [Chat] Limpiando componente...');
+    
+    // Limpiar WebSocket - CORREGIDO
+    if (echoChannel && typeof echoChannel.leave === 'function') {
+        try {
+            echoChannel.stopListening('.message.sent');
+            echoChannel.leave();
+            console.log('✅ [Chat] Canal WebSocket cerrado correctamente');
+        } catch (error) {
+            console.warn('⚠️ [Chat] Error cerrando canal WebSocket:', error);
+        }
+    }
+    
+    // Limpiar conversación actual
+    if (window.currentConversationId === props.conversation?.id) {
+        window.currentConversationId = null;
+    }
+    
+    // Reset variables
+    echoChannel = null;
 });
 
 const sendMessage = async () => {

@@ -44,12 +44,15 @@ const typingTimeout = ref(null);
 const onlineStatus = ref(false);
 const echoAvailable = ref(false);
 
-// 🚀 NUEVAS VARIABLES PARA POLLING
+// Variables para polling
 const pollingInterval = ref(null);
 const isPolling = ref(false);
 const lastMessageId = ref(0);
 const pollingError = ref(null);
 const connectionStatus = ref('connecting'); // connecting, connected, error
+
+// Variable para el canal de Echo - CORREGIDA
+let echoChannel = null;
 
 // Inicializar último mensaje ID
 const initializeLastMessageId = () => {
@@ -59,7 +62,7 @@ const initializeLastMessageId = () => {
     console.log('🆔 Último mensaje ID inicializado:', lastMessageId.value);
 };
 
-// 🔄 MÉTODOS DE POLLING
+// MÉTODOS DE POLLING
 const startPolling = () => {
     if (isPolling.value) return;
     
@@ -152,7 +155,7 @@ const markMessagesAsRead = async () => {
     }
 };
 
-// 🎧 EVENTOS DE VISIBILIDAD DE LA VENTANA
+// EVENTOS DE VISIBILIDAD DE LA VENTANA
 const handleVisibilityChange = () => {
     if (document.hidden) {
         // Ventana oculta - detener polling para ahorrar recursos
@@ -178,7 +181,7 @@ const handleWindowFocus = () => {
     }
 };
 
-// Configurar WebSockets (mantener como fallback)
+// Configurar WebSockets (mantener como fallback) - CORREGIDA
 const setupWebSockets = () => {
     if (!window.Echo) {
         console.warn('Pusher/Echo no está disponible, usando polling');
@@ -222,7 +225,6 @@ const setupWebSockets = () => {
     }
 };
 
-
 // Helper para agregar mensajes
 const addMessageIfNotExists = (messageData) => {
     if (!messages.value.some(m => m.id === messageData.id)) {
@@ -251,9 +253,7 @@ const handleTypingNotification = (data) => {
     }, 2000);
 };
 
-// Limpiar listeners al desmontar
-let echoChannel = null;
-
+// LIFECYCLE HOOKS - CORREGIDOS
 onMounted(() => {
     console.log('🚀 Componente Chat montado');
     
@@ -283,36 +283,54 @@ onMounted(() => {
     }
 });
 
+// CLEANUP CORREGIDO - ESTA ERA LA LÍNEA PROBLEMÁTICA
 onBeforeUnmount(() => {
     console.log('🧹 Limpiando componente Chat...');
     
+    // Detener polling
     stopPolling();
     
-    if (echoChannel) {
-        echoChannel.leave();
+    // Limpiar WebSockets - CORREGIDO
+    if (echoChannel && typeof echoChannel.leave === 'function') {
+        try {
+            echoChannel.leave();
+            console.log('✅ Canal WebSocket cerrado correctamente');
+        } catch (error) {
+            console.warn('⚠️ Error cerrando canal WebSocket:', error);
+        }
+    }
+    
+    // Notificar estado offline
+    if (echoAvailable.value) {
         notifyOnlineStatus(false);
     }
     
+    // Limpiar timeouts
     if (typingTimeout.value) {
         clearTimeout(typingTimeout.value);
+        typingTimeout.value = null;
     }
     
     // Remover event listeners
     document.removeEventListener('visibilitychange', handleVisibilityChange);
     window.removeEventListener('focus', handleWindowFocus);
+    
+    // Reset variables
+    echoChannel = null;
+    echoAvailable.value = false;
 });
 
-// Notificar estado en línea
+// Notificar estado en línea - CORREGIDA
 const notifyOnlineStatus = (status) => {
-    if (echoAvailable.value && window.Echo && props.conversation?.id) {
+    if (echoAvailable.value && window.Echo && props.conversation?.id && echoChannel) {
         try {
-            window.Echo.private(`conversation.${props.conversation.id}`)
-                .whisper('online', { online: status });
+            echoChannel.whisper('online', { online: status });
         } catch (error) {
             console.warn('Error sending online status:', error);
         }
     }
 };
+
 // Métodos del componente
 const scrollToBottom = () => {
     nextTick(() => {
@@ -368,13 +386,11 @@ const sendMessage = async () => {
     }
 };
 
-// Función para manejar typing (si quieres mantenerla)
+// Función para manejar typing - CORREGIDA
 const handleTyping = () => {
-    // Check if Echo is available and the conversation has an ID
-    if (echoAvailable.value && window.Echo && props.conversation?.id) {
+    if (echoAvailable.value && window.Echo && props.conversation?.id && echoChannel) {
         try {
-            window.Echo.private(`conversation.${props.conversation.id}`)
-                .whisper('typing', { typing: true });
+            echoChannel.whisper('typing', { typing: true });
         } catch (error) {
             console.warn('Error sending typing notification:', error);
         }
@@ -407,7 +423,7 @@ const reconnect = () => {
                     </div>
                 </div>
                 
-                <!-- 🚀 NUEVO: Indicador de estado de conexión -->
+                <!-- Indicador de estado de conexión -->
                 <div class="flex items-center space-x-2">
                     <div v-if="connectionStatus === 'connected'" class="flex items-center">
                         <span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
@@ -431,7 +447,7 @@ const reconnect = () => {
                 </div>
             </div>
 
-            <!-- 🚀 NUEVO: Barra de estado de polling -->
+            <!-- Barra de estado de polling -->
             <div v-if="pollingError" class="bg-yellow-50 border-b border-yellow-200 px-4 py-2">
                 <div class="flex items-center justify-between">
                     <span class="text-sm text-yellow-800">⚠️ {{ pollingError }}</span>
@@ -442,10 +458,8 @@ const reconnect = () => {
             </div>
 
             <!-- Messages Container -->
-            <div 
-                ref="messagesContainer"
-                class="flex-1 overflow-y-auto p-4 space-y-3 bg-background"
-            >
+            <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
+
                 <div
                     v-for="message in messages"
                     :key="message.id"
@@ -475,7 +489,7 @@ const reconnect = () => {
 
             <!-- Message Input -->
             <div class="p-4 border-t border-border bg-card">
-                <!-- 🚀 NUEVO: Indicador de modo de tiempo real -->
+                <!-- Indicador de modo de tiempo real -->
                 <div class="mb-2 text-sm flex items-center justify-between">
                     <div class="flex items-center space-x-2">
                         <span v-if="echoAvailable" class="text-green-600">

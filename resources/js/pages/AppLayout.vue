@@ -13,6 +13,12 @@ const hasNewMessages = ref(false);
 // 🚀 Guardamos en window para que ChatModal.vue lo pueda usar
 window.hasNewMessages = hasNewMessages;
 
+// 🚀 Función para limpiar badge - definida fuera para poder removerla
+const clearNewMessagesHandler = () => {
+    hasNewMessages.value = false;
+    console.log('🟢 [AppLayout] Badge de Nuevo mensaje limpiado');
+};
+
 // 🚀 Montaje
 onMounted(() => {
     if (!window.Echo) {
@@ -46,23 +52,34 @@ onMounted(() => {
         });
 
     // 🚀 Escuchar evento global para limpiar badge
-    window.addEventListener('clear-new-messages', () => {
-        hasNewMessages.value = false;
-        console.log('🟢 [AppLayout] Badge de Nuevo mensaje limpiado');
-    });
+    window.addEventListener('clear-new-messages', clearNewMessagesHandler);
 });
 
-// 🚀 Desmontaje
+// 🚀 Desmontaje - CORREGIDO
 onBeforeUnmount(() => {
-    if (echoChannel) {
-        echoChannel.stopListening('.conversation.updated');
-        echoChannel.leave();
-        console.log(`ℹ️ [AppLayout] Canal privado user.${userId} cerrado`);
+    console.log('🧹 [AppLayout] Limpiando...');
+    
+    // Limpiar WebSocket - CORREGIDO
+    if (echoChannel && typeof echoChannel.leave === 'function') {
+        try {
+            echoChannel.stopListening('.conversation.updated');
+            echoChannel.leave();
+            console.log(`✅ [AppLayout] Canal privado user.${userId} cerrado correctamente`);
+        } catch (error) {
+            console.warn('⚠️ [AppLayout] Error cerrando canal:', error);
+        }
     }
 
-    window.removeEventListener('clear-new-messages', () => {
-        hasNewMessages.value = false;
-    });
+    // Limpiar event listener - CORREGIDO
+    window.removeEventListener('clear-new-messages', clearNewMessagesHandler);
+    
+    // Limpiar variable global
+    if (window.hasNewMessages) {
+        window.hasNewMessages = null;
+    }
+    
+    // Reset variables
+    echoChannel = null;
 });
 </script>
 
