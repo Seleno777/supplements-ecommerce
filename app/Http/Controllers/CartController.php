@@ -35,12 +35,30 @@ class CartController extends Controller
             ->where('product_id', $request->product_id)
             ->first();
 
-        if ($existingItem) {
+        // Caso: añadir desde /products → solo permitir si NO existe aún
+        if (!$request->expectsJson() && $existingItem) {
             return response()->json([
-                'message' => 'Este producto ya está en el carrito. Edita su cantidad en el apartado carrito'
+                'message' => 'Este producto ya está en el carrito.'
             ], 409);
         }
 
+        // Si existe, se actualiza la cantidad
+        if ($existingItem) {
+            $newQty = $request->quantity;
+
+            if ($newQty > $product->stock) {
+                return response()->json([
+                    'message' => 'No hay suficiente stock disponible.'
+                ], 400);
+            }
+
+            $existingItem->quantity = $newQty;
+            $existingItem->save();
+
+            return $existingItem->load('product');
+        }
+
+        // Crear nuevo si no existe
         if ($request->quantity > $product->stock) {
             return response()->json([
                 'message' => 'No hay suficiente stock disponible.'
