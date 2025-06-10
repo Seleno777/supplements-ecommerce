@@ -223,15 +223,28 @@ const setupWebSockets = () => {
 // Helper para agregar mensajes ordenadamente y evitar duplicados
 const addMessageIfNotExists = (messageData) => {
   if (!messages.value.some(m => m.id === messageData.id)) {
-    messages.value.push({
+    const newMessage = {
       id: messageData.id,
       content: messageData.content,
       sender: messageData.sender,
       created_at: messageData.created_at
-    });
+    };
 
-    // Ordenar mensajes después de agregar nuevo para mantener el orden correcto
-    messages.value.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    // Encontrar la posición correcta para insertar el mensaje en orden cronológico
+    const messageDate = new Date(newMessage.created_at);
+    let insertIndex = messages.value.length;
+    
+    for (let i = messages.value.length - 1; i >= 0; i--) {
+      if (new Date(messages.value[i].created_at) <= messageDate) {
+        insertIndex = i + 1;
+        break;
+      }
+      if (i === 0) {
+        insertIndex = 0;
+      }
+    }
+
+    messages.value.splice(insertIndex, 0, newMessage);
 
     if (messageData.id > lastMessageId.value) {
       lastMessageId.value = messageData.id;
@@ -273,7 +286,11 @@ onMounted(() => {
   console.log('🚀 Componente Chat montado');
 
   initializeMessages();
-  scrollToBottom();
+  
+  // Hacer scroll al final después de que se monten los mensajes
+  nextTick(() => {
+    scrollToBottom();
+  });
 
   echoChannel = setupWebSockets();
 
@@ -370,7 +387,6 @@ const sendMessage = async () => {
 
     if (response.data.message) {
       addMessageIfNotExists(response.data.message);
-      scrollToBottom();
     }
 
   } catch (error) {
@@ -446,7 +462,7 @@ const sendMessage = async () => {
               <p class="text-sm">¡Inicia la conversación!</p>
             </div>
 
-            <!-- Lista de mensajes -->
+            <!-- Lista de mensajes ordenados cronológicamente -->
             <div
               v-for="message in messages"
               :key="message.id"
@@ -472,7 +488,7 @@ const sendMessage = async () => {
               </div>
             </div>
 
-            <!-- Indicador de escritura -->
+            <!-- Indicador de escritura (siempre al final) -->
             <div v-if="typing" class="flex justify-start">
               <div class="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-2xl max-w-xs">
                 <div class="flex items-center space-x-1">
