@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import axios from 'axios';
-import { ref, onMounted, nextTick, watch, onBeforeUnmount } from 'vue';
+import { ref, onMounted, nextTick, watch, onBeforeUnmount, computed } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 
 // Obtener el usuario actual desde Inertia
@@ -51,8 +51,23 @@ const lastMessageId = ref(0);
 const pollingError = ref(null);
 const connectionStatus = ref('connecting'); // connecting, connected, error
 
-// Variable para el canal de Echo - CORREGIDA
+// Variable para el canal de Echo
 let echoChannel = null;
+
+// COMPUTED PROPERTY PARA ORDENAR MENSAJES CORRECTAMENTE
+const sortedMessages = computed(() => {
+    return [...messages.value].sort((a, b) => {
+        // Ordenar por ID (más antiguo primero) o por fecha si no hay ID
+        if (a.id && b.id) {
+            return a.id - b.id;
+        }
+        
+        // Fallback a fecha de creación
+        const dateA = new Date(a.created_at);
+        const dateB = new Date(b.created_at);
+        return dateA - dateB;
+    });
+});
 
 // Inicializar último mensaje ID
 const initializeLastMessageId = () => {
@@ -181,7 +196,7 @@ const handleWindowFocus = () => {
     }
 };
 
-// Configurar WebSockets (mantener como fallback) - CORREGIDA
+// Configurar WebSockets (mantener como fallback)
 const setupWebSockets = () => {
     if (!window.Echo) {
         console.warn('Pusher/Echo no está disponible, usando polling');
@@ -225,7 +240,7 @@ const setupWebSockets = () => {
     }
 };
 
-// Helper para agregar mensajes
+// Helper para agregar mensajes - MEJORADO PARA MANTENER ORDEN
 const addMessageIfNotExists = (messageData) => {
     if (!messages.value.some(m => m.id === messageData.id)) {
         messages.value.push({
@@ -240,6 +255,7 @@ const addMessageIfNotExists = (messageData) => {
             lastMessageId.value = messageData.id;
         }
         
+        // El sorting se maneja automáticamente por el computed property
         scrollToBottom();
     }
 };
@@ -253,9 +269,14 @@ const handleTypingNotification = (data) => {
     }, 2000);
 };
 
-// LIFECYCLE HOOKS - CORREGIDOS
+// LIFECYCLE HOOKS
 onMounted(() => {
     console.log('🚀 Componente Chat montado');
+    
+    // Asegurar que los mensajes iniciales estén ordenados correctamente
+    if (props.conversation.messages && props.conversation.messages.length > 0) {
+        messages.value = [...props.conversation.messages];
+    }
     
     scrollToBottom();
     initializeLastMessageId();
@@ -283,14 +304,14 @@ onMounted(() => {
     }
 });
 
-// CLEANUP CORREGIDO - ESTA ERA LA LÍNEA PROBLEMÁTICA
+// CLEANUP
 onBeforeUnmount(() => {
     console.log('🧹 Limpiando componente Chat...');
     
     // Detener polling
     stopPolling();
     
-    // Limpiar WebSockets - CORREGIDO
+    // Limpiar WebSockets
     if (echoChannel && typeof echoChannel.leave === 'function') {
         try {
             echoChannel.leave();
@@ -320,7 +341,7 @@ onBeforeUnmount(() => {
     echoAvailable.value = false;
 });
 
-// Notificar estado en línea - CORREGIDA
+// Notificar estado en línea
 const notifyOnlineStatus = (status) => {
     if (echoAvailable.value && window.Echo && props.conversation?.id && echoChannel) {
         try {
@@ -386,7 +407,7 @@ const sendMessage = async () => {
     }
 };
 
-// Función para manejar typing - CORREGIDA
+// Función para manejar typing
 const handleTyping = () => {
     if (echoAvailable.value && window.Echo && props.conversation?.id && echoChannel) {
         try {
@@ -457,11 +478,11 @@ const reconnect = () => {
                 </div>
             </div>
 
-            <!-- Messages Container -->
+            <!-- Messages Container - USANDO sortedMessages AHORA -->
             <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
 
                 <div
-                    v-for="message in messages"
+                    v-for="message in sortedMessages"
                     :key="message.id"
                     class="flex"
                     :class="message.sender.id === currentUser.id ? 'justify-end' : 'justify-start'"
@@ -482,7 +503,7 @@ const reconnect = () => {
                     </div>
                 </div>
 
-                <div v-if="messages.length === 0" class="text-center text-muted-foreground py-8">
+                <div v-if="sortedMessages.length === 0" class="text-center text-muted-foreground py-8">
                     No hay mensajes aún. ¡Inicia la conversación!
                 </div>
             </div>
@@ -500,7 +521,7 @@ const reconnect = () => {
                         </span>
                     </div>
                     <div class="text-xs text-muted-foreground">
-                        Mensajes: {{ messages.length }} | Último ID: {{ lastMessageId }}
+                        Mensajes: {{ sortedMessages.length }} | Último ID: {{ lastMessageId }}
                     </div>
                 </div>
                 
