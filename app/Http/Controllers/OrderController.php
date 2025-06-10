@@ -64,14 +64,17 @@ class OrderController extends Controller
                     'price' => $item->product->price,
                 ]);
 
-                // Descontar stock
                 $item->product->decrement('stock', $item->quantity);
 
-                // Notificar si el producto se agotó
-                $item->product->user->notifications()->create([
-                    'message' => "Tu producto '{$item->product->name}' está agotado.",
-                    'type' => 'warning',
-                ]);
+                // Verificar si el producto quedó en cero
+                $item->product->refresh(); // <-- actualiza los datos desde DB
+
+                if ($item->product->stock <= 0) {
+                    $item->product->user->notifications()->create([
+                        'message' => "Tu producto '{$item->product->name}' está agotado.",
+                        'type' => 'warning',
+                    ]);
+                }
             }
 
             // Vaciar carrito
