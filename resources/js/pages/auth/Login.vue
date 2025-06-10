@@ -20,7 +20,7 @@ const submit = () => {
 <template>
   <GuestLayout>
     <h2 class="text-xl font-bold text-[#00569D] mb-4">Iniciar sesión</h2>
-
+    
     <form @submit.prevent="submit" class="space-y-4 text-left">
       <!-- Email -->
       <div>
@@ -35,7 +35,7 @@ const submit = () => {
           {{ form.errors.email }}
         </div>
       </div>
-
+      
       <!-- Contraseña -->
       <div>
         <label class="block mb-1 text-sm font-medium">Contraseña</label>
@@ -49,12 +49,22 @@ const submit = () => {
           {{ form.errors.password }}
         </div>
       </div>
-
+      
+      <!-- Enlace de recuperación de contraseña -->
+      <div class="text-right">
+        <Link 
+          href="/forgot-password" 
+          class="text-sm text-[#00569D] hover:underline"
+        >
+          ¿Olvidaste tu contraseña?
+        </Link>
+      </div>
+      
       <!-- Errores generales -->
       <div v-if="form.errors.general" class="font-semibold text-red-600">
         {{ form.errors.general }}
       </div>
-
+      
       <!-- Botón -->
       <button 
         type="submit"
@@ -65,7 +75,7 @@ const submit = () => {
         <span v-else>Iniciar sesión</span>
       </button>
     </form>
-
+    
     <!-- Registro -->
     <div class="mt-6 text-sm text-gray-600 dark:text-gray-300 text-center">
       ¿No tienes una cuenta?

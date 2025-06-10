@@ -11,6 +11,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\Auth\PasswordController;
 
 // Token CSRF para requests AJAX
 Route::get('/csrf-token', function () {
@@ -19,6 +20,7 @@ Route::get('/csrf-token', function () {
 
 // Rutas públicas de productos
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
 // Rutas protegidas por autenticación
 Route::middleware('auth')->group(function () {
@@ -42,6 +44,10 @@ Route::middleware('auth')->group(function () {
     // Órdenes/Pedidos
     Route::post('/checkout', [OrderController::class, 'checkout'])->name('checkout');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+
+    // Cambio de contraseña
+    Route::get('/password', [PasswordController::class, 'edit'])->name('password.edit');
+    Route::put('/password', [PasswordController::class, 'update'])->name('password.update');
 
     // Notificaciones
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
@@ -71,11 +77,8 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-// Ruta pública para mostrar producto individual
-Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
-
 // Rutas de autenticación (login, logout, register, etc.)
 require __DIR__ . '/auth.php';
 
-// Otras configuraciones
+// Otras configuraciones (verificar que este archivo exista)
 require __DIR__ . '/settings.php';
